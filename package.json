@@ -10,7 +10,7 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:package-size.helloWorld"
+		"*"
 	],
 	"main": "./out/extension.js",
 	"contributes": {

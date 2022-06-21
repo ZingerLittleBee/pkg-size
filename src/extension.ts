@@ -1,26 +1,97 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import { stat } from 'fs/promises'
+import * as vscode from 'vscode'
+import { parse } from './parser'
+import { fsFormat, getDirectorySize, getOrInsert } from './utils'
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
-	
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "package-size" is now active!');
+let myStatusBarItem: vscode.StatusBarItem
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from package-size!');
-	});
+// <path or npm name, size>
+let map = new Map<string, number>()
 
-	context.subscriptions.push(disposable);
+export function activate({ subscriptions }: vscode.ExtensionContext) {
+	// const myCommandId = 'package-size.helloWorld'
+	// subscriptions.push(
+	// 	vscode.commands.registerCommand(myCommandId, () => {
+	// 		const n = getNumberOfSelectedLines(vscode.window.activeTextEditor)
+	// 		vscode.window.showInformationMessage(
+	// 			`Yeah, ${n} line(s) selected... Keep going!`
+	// 		)
+	// 	})
+	// )
+
+	// create a new status bar item that we can now manage
+	myStatusBarItem = vscode.window.createStatusBarItem(
+		vscode.StatusBarAlignment.Right,
+		100
+	)
+	// myStatusBarItem.command = myCommandId
+	// subscriptions.push(myStatusBarItem)
+
+	// register some listener that make sure the status bar
+	// item always up-to-date
+	subscriptions.push(
+		vscode.window.onDidChangeActiveTextEditor(async e => {
+			let path = e?.document?.uri.path
+			path && vscode.window.showInformationMessage(path)
+			if (path) {
+				let size: number | undefined
+				try {
+					const currStat = await stat(path)
+					size = currStat.isDirectory()
+						? await getDirectorySize(path)
+						: getOrInsert(map, path, currStat?.size)
+				} catch (e) {
+					console.log(e)
+				}
+				size && updateStatusBarItem(size)
+			}
+			// const type = vscode.window.createTextEditorDecorationType({
+			// 	after: {
+			// 		contentText: '123!!'
+			// 	}
+			// })
+			const fileName = e?.document.fileName
+			if (fileName?.toLocaleLowerCase().endsWith('package.json')) {
+				const text = e?.document.getText()
+				if (text) {
+					let reflects = await parse(text)
+					console.log('reflects', reflects)
+					// TODO: get deps size
+				}
+				// let p = new Position(1, 0)
+				// let p2 = new Position(1, 100)
+				// let range = new Range(p, p2)
+				// e?.setDecorations(type, [range])
+			}
+		})
+	)
+
+	subscriptions.push(
+		vscode.workspace.onDidRenameFiles(e => {
+			vscode.window.showInformationMessage(
+				`old: ${e.files[0].oldUri}, new: ${e.files[0].oldUri}`
+			)
+		})
+	)
+	subscriptions.push(
+		vscode.workspace.onDidChangeWorkspaceFolders(e => {
+			vscode.window.showInformationMessage('onDidChangeWorkspaceFolders')
+		})
+	)
+	// subscriptions.push(
+	// 	vscode.window.onDidChangeTextEditorSelection(updateStatusBarItem)
+	// )
+
+	// update status bar item once at start
+	updateStatusBarItem(0)
 }
 
-// this method is called when your extension is deactivated
-export function deactivate() {}
+function updateStatusBarItem(size: number): void {
+	// const n = getNumberOfSelectedLines(vscode.window.activeTextEditor)
+	if (size > 0) {
+		myStatusBarItem.text = `$(megaphone) ${fsFormat(size)}`
+		myStatusBarItem.show()
+	} else {
+		myStatusBarItem.hide()
+	}
+}
