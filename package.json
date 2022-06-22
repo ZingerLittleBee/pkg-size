@@ -49,5 +49,8 @@
 		"commitizen": {
 			"path": "git-cz"
 		}
+	},
+	"dependencies": {
+		"package-build-stats": "^7.3.11"
 	}
 }

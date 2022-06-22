@@ -1,5 +1,8 @@
 import { stat } from 'fs/promises'
 import * as vscode from 'vscode'
+import { batchBuild } from './build'
+import { Cache } from './cache'
+import { listener } from './emitter'
 import { parse } from './parser'
 import { fsFormat, getDirectorySize, getOrInsert } from './utils'
 
@@ -56,6 +59,22 @@ export function activate({ subscriptions }: vscode.ExtensionContext) {
 				if (text) {
 					let reflects = await parse(text)
 					console.log('reflects', reflects)
+					listener(
+						e => {
+							// TODO: show decoration
+							console.log(e)
+						},
+						() => {
+							console.log('done')
+						}
+					)
+					batchBuild(
+						reflects.map(r => ({
+							packageName: r.key,
+							version: r.value
+						}))
+					)
+					console.log(Cache.getInstance())
 					// TODO: get deps size
 				}
 				// let p = new Position(1, 0)
