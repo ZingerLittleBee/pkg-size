@@ -1,9 +1,9 @@
 import { createInterface } from 'readline'
 import { Readable } from 'stream'
 
-type DepInfo = {
-	key: string
-	value: string
+export type DepInfo = {
+	name: string
+	version: string
 	lineNumber: number
 	length: number
 }
@@ -37,8 +37,8 @@ export const parse = (text: string) => {
 				const res = depRegex.exec(line.trim())
 				if (res) {
 					reflects.push({
-						key: res[1],
-						value: res[2],
+						name: res[1],
+						version: res[2],
 						length: line.length,
 						lineNumber
 					})

@@ -1,7 +1,7 @@
 import { getPackageStats } from 'package-build-stats'
 import { GetPackageStatsOptions } from 'package-build-stats/build/common.types'
 import { Cache } from './cache'
-import { done, finish } from './emitter'
+import { depDone, depFinish } from './emitter'
 
 const cache = Cache.getInstance()
 
@@ -45,10 +45,10 @@ export const batchBuild = (
 	let taskNumber = packages.length
 	packages.forEach(p => {
 		build(p.packageName, p.version).then(() => {
-			finish(getPackageFullName(p.packageName, p.version))
+			depFinish(getPackageFullName(p.packageName, p.version))
 			taskNumber--
 			if (taskNumber === 0) {
-				done()
+				depDone()
 			}
 		})
 	})

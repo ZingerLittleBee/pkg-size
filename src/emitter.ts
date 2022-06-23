@@ -5,7 +5,7 @@ let DONE = Symbol('done')
 
 const emitter = mitt()
 
-export const listener = (
+export const depListener = (
 	finishEvent?: (key: string) => void,
 	doneEvent?: () => void
 ) => {
@@ -13,12 +13,17 @@ export const listener = (
 	emitter.on(DONE, () => doneEvent?.())
 }
 
-export const finish = (key: string) => {
+export const depFinish = (key: string) => {
 	emitter.emit(FINISH, key)
 }
 
-export const done = () => {
+export const depDone = () => {
 	emitter.emit(DONE)
+}
+
+export const depClear = () => {
+	emitter.off(FINISH)
+	emitter.off(DONE)
 }
 
 export const clear = () => {

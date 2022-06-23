@@ -5,17 +5,17 @@ export const fsFormat = (size: number) => {
 		size /= 1024
 		i++
 	}
-	return `${size.toFixed(1)} ${units[i]}`
+	return `${size.toFixed(1)}${units[i]}`
 }
 
 export const getDirectorySize = async (path: string) => {
 	return 0
 }
 
-export const getOrInsert = (
-	map: Map<string, number>,
+export const getOrInsert = <T>(
+	map: Map<string, T>,
 	key: string,
-	insertValue: number
+	insertValue: T
 ) => {
 	if (map.get(key)) {
 		return map.get(key)

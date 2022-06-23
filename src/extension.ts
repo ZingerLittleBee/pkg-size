@@ -1,15 +1,23 @@
-import { stat } from 'fs/promises'
 import * as vscode from 'vscode'
-import { batchBuild } from './build'
+import { Position, Range } from 'vscode'
+import { batchBuild, getPackageFullName } from './build'
 import { Cache } from './cache'
-import { listener } from './emitter'
-import { parse } from './parser'
-import { fsFormat, getDirectorySize, getOrInsert } from './utils'
+import { depClear, depListener } from './emitter'
+import { DepInfo, parse } from './parser'
+import { fsFormat } from './utils'
+
+type PackageInfo = DepInfo & SizeInfo
+
+type SizeInfo = {
+	size?: number
+	gzip?: number
+}
 
 let myStatusBarItem: vscode.StatusBarItem
 
-// <path or npm name, size>
-let map = new Map<string, number>()
+// <getPackageFullName(name, version), PackageInfo>
+let map = new Map<string, PackageInfo>()
+const cache = Cache.getInstance()
 
 export function activate({ subscriptions }: vscode.ExtensionContext) {
 	// const myCommandId = 'package-size.helloWorld'
@@ -36,18 +44,18 @@ export function activate({ subscriptions }: vscode.ExtensionContext) {
 		vscode.window.onDidChangeActiveTextEditor(async e => {
 			let path = e?.document?.uri.path
 			path && vscode.window.showInformationMessage(path)
-			if (path) {
-				let size: number | undefined
-				try {
-					const currStat = await stat(path)
-					size = currStat.isDirectory()
-						? await getDirectorySize(path)
-						: getOrInsert(map, path, currStat?.size)
-				} catch (e) {
-					console.log(e)
-				}
-				size && updateStatusBarItem(size)
-			}
+			// if (path) {
+			// 	let size: number | undefined
+			// 	try {
+			// 		const currStat = await stat(path)
+			// 		size = currStat.isDirectory()
+			// 			? await getDirectorySize(path)
+			// 			: getOrInsert(map, path, currStat?.size)
+			// 	} catch (e) {
+			// 		console.log(e)
+			// 	}
+			// 	size && updateStatusBarItem(size)
+			// }
 			// const type = vscode.window.createTextEditorDecorationType({
 			// 	after: {
 			// 		contentText: '123!!'
@@ -58,29 +66,54 @@ export function activate({ subscriptions }: vscode.ExtensionContext) {
 				const text = e?.document.getText()
 				if (text) {
 					let reflects = await parse(text)
-					console.log('reflects', reflects)
-					listener(
-						e => {
-							// TODO: show decoration
-							console.log(e)
+					depListener(
+						key => {
+							const depInfo = reflects.find(
+								r =>
+									getPackageFullName(r.name, r.version) ===
+									key
+							)
+							if (depInfo) {
+								const size = cache.get(key)?.size
+								const gzip = cache.get(key)?.gzip
+								const updatedPackageInfo = {
+									...depInfo,
+									size,
+									gzip
+								}
+								map.set(key, updatedPackageInfo)
+								e && updateDecorations(e, updatedPackageInfo)
+							}
 						},
 						() => {
 							console.log('done')
+							depClear()
 						}
 					)
 					batchBuild(
-						reflects.map(r => ({
-							packageName: r.key,
-							version: r.value
-						}))
+						reflects
+							.filter(r => {
+								const fullName = getPackageFullName(
+									r.name,
+									r.version
+								)
+								let currDepInfo = map.get(fullName)
+								if (!currDepInfo) {
+									return true
+								}
+								const isBuilded =
+									currDepInfo.gzip && currDepInfo.size
+								if (isBuilded) {
+									e && updateDecorations(e, currDepInfo)
+								}
+								return !isBuilded
+							})
+							.map(r => ({
+								packageName: r.name,
+								version: r.version
+							}))
 					)
-					console.log(Cache.getInstance())
-					// TODO: get deps size
 				}
-				// let p = new Position(1, 0)
-				// let p2 = new Position(1, 100)
-				// let range = new Range(p, p2)
-				// e?.setDecorations(type, [range])
 			}
 		})
 	)
@@ -113,4 +146,21 @@ function updateStatusBarItem(size: number): void {
 	} else {
 		myStatusBarItem.hide()
 	}
+}
+
+let indent = 4
+function updateDecorations(editor: vscode.TextEditor, info: PackageInfo) {
+	const text = `${info.size && fsFormat(info.size)} ${
+		info.gzip ? `(gzip: ${fsFormat(info.gzip)})` : ''
+	}`
+	const type = vscode.window.createTextEditorDecorationType({
+		after: {
+			contentText: `${Array(indent).fill(' ').join('')}${text}`,
+			color: '#22C55E'
+		}
+	})
+	let start = new Position(info.lineNumber, info.length)
+	let end = new Position(info.lineNumber, info.length + text.length)
+	let range = new Range(start, end)
+	editor.setDecorations(type, [range])
 }
