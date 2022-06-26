@@ -2,8 +2,6 @@ import { stat } from 'fs/promises'
 import {
 	commands,
 	ExtensionContext,
-	StatusBarAlignment,
-	StatusBarItem,
 	TextEditor,
 	window,
 	workspace
@@ -13,7 +11,7 @@ import { Cache } from './cache'
 import { clearDecorations, updateDecorations } from './decoration'
 import { depClear, depListener } from './emitter'
 import { DepInfo, parse } from './parser'
-import { fsFormat } from './utils'
+import { SizeStatusBarItem } from './status-bar'
 
 export type PackageInfo = DepInfo & SizeInfo
 
@@ -22,22 +20,20 @@ type SizeInfo = {
 	gzip?: number
 }
 
-let myStatusBarItem: StatusBarItem
-
 const cache = Cache.getInstance()
 
-const myCommandId = 'package-size.rebuild'
+const rebuildCommandId = 'package-size.rebuild'
 
 export function activate({ subscriptions }: ExtensionContext) {
 	subscriptions.push(
-		commands.registerCommand(myCommandId, () => {
+		commands.registerCommand(rebuildCommandId, () => {
 			console.log('rebuild')
 			cache.clear()
+			clearDecorations()
 		})
 	)
 
-	// create a new status bar item that we can now manage
-	myStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right, 100)
+	const sizeStatusBarItem = new SizeStatusBarItem()
 
 	// register some listener that make sure the status bar
 	// item always up-to-date
@@ -49,8 +45,11 @@ export function activate({ subscriptions }: ExtensionContext) {
 					try {
 						const currStat = await stat(path)
 						currStat.isDirectory()
-							? hideStatusBarItem()
-							: updateStatusBarItem(currStat.size)
+							? sizeStatusBarItem.hideStatusBarItem()
+							: sizeStatusBarItem.updateStatusBarItem(
+									currStat.size,
+									rebuildCommandId
+							  )
 					} catch (e) {
 						console.error(e)
 					}
@@ -91,18 +90,6 @@ export function activate({ subscriptions }: ExtensionContext) {
 				handlePackage(window.activeTextEditor, e.getText())
 		})
 	)
-}
-
-function updateStatusBarItem(size: number): void {
-	// const n = getNumberOfSelectedLines(vscode.window.activeTextEditor)
-	myStatusBarItem.text = `$(package) ${fsFormat(size)}`
-	myStatusBarItem.tooltip = 'Click to rebuild'
-	myStatusBarItem.command = myCommandId
-	myStatusBarItem.show()
-}
-
-function hideStatusBarItem(): void {
-	myStatusBarItem.hide()
 }
 
 const handlePackage = async (editor: TextEditor, text: string) => {
