@@ -13,43 +13,49 @@ export const build = async (
 	packageName: string,
 	version?: string,
 	options?: GetPackageStatsOptions
-): Promise<{ size: number; gzip: number }> => {
-	let size = 0
-	let gzip = 0
+) => {
 	try {
 		const res = await getPackageStats(
 			getPackageFullName(packageName, version),
 			{
-				minifier: 'esbuild',
 				...options
 			}
 		)
-		size = res.size
-		gzip = res.gzip
+		cache.set(getPackageFullName(packageName, version), {
+			size: res.size,
+			gzip: res.gzip,
+			time: new Date().getTime()
+		})
 	} catch (e) {
+		console.error(`${packageName}@${version} build failed, will skip`)
 		console.error(e)
-	}
-	cache.set(getPackageFullName(packageName, version), {
-		size,
-		gzip
-	})
-	return {
-		size,
-		gzip
+		cache.set(getPackageFullName(packageName, version), {
+			isSkip: true,
+			time: new Date().getTime()
+		})
 	}
 }
 
-export const batchBuild = (
+export const batchBuild = async (
 	packages: { packageName: string; version: string }[]
 ) => {
 	let taskNumber = packages.length
 	packages.forEach(p => {
-		build(p.packageName, p.version).then(() => {
-			depFinish(getPackageFullName(p.packageName, p.version))
-			taskNumber--
-			if (taskNumber === 0) {
-				depDone()
+		const packageName = p.packageName
+		const version = p.version
+		const infoInCache = cache.get(getPackageFullName(packageName, version))
+		if (infoInCache) {
+			if (!infoInCache.isSkip) {
+				depFinish(getPackageFullName(packageName, version))
 			}
-		})
+		} else {
+			build(packageName, version).then(() => {
+				depFinish(getPackageFullName(packageName, version))
+			})
+		}
+		taskNumber--
+		if (taskNumber === 0) {
+			depDone()
+		}
 	})
 }

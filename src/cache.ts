@@ -1,13 +1,12 @@
+type BuildInfo = {
+	size?: number
+	gzip?: number
+	time?: number
+	isSkip?: boolean
+}
 export class Cache {
-	private map: Map<
-		string,
-		{
-			version: string
-			size?: number
-			gzip?: number
-			time?: number
-		}
-	>
+	// <packageName@version, buildInfo>
+	private map: Map<string, BuildInfo>
 	private static instance: Cache
 	constructor() {
 		this.map = new Map()

@@ -27,7 +27,7 @@ export const parse = (text: string) => {
 		const reflects: DepInfo[] = []
 		rl.on('line', line => {
 			const depRegex =
-				/"([a-z0-9\-\/@]+)"\s*:\s*"[\^~]?(\d+\.[\dx]+(?:[\.\dx]*)?(?:\-[a-z0-9\.]+)?)"/g
+				/"([a-z0-9\-\/@]+)"\s*:\s*"[\^~]?(\d+(?:\.[\dx]+)?(?:[\.\dx]*)?(?:\-[a-z0-9\.]+)?)"/g
 			lineNumber++
 			// dep block
 			if (depStartRegex.test(line)) {

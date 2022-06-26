@@ -1,5 +1,13 @@
+import { stat } from 'fs/promises'
 import * as vscode from 'vscode'
-import { Position, Range } from 'vscode'
+import {
+	Position,
+	Range,
+	TextEditor,
+	TextEditorDecorationType,
+	window,
+	workspace
+} from 'vscode'
 import { batchBuild, getPackageFullName } from './build'
 import { Cache } from './cache'
 import { depClear, depListener } from './emitter'
@@ -42,113 +50,72 @@ export function activate({ subscriptions }: vscode.ExtensionContext) {
 	// item always up-to-date
 	subscriptions.push(
 		vscode.window.onDidChangeActiveTextEditor(async e => {
-			let path = e?.document?.uri.path
-			path && vscode.window.showInformationMessage(path)
-			// if (path) {
-			// 	let size: number | undefined
-			// 	try {
-			// 		const currStat = await stat(path)
-			// 		size = currStat.isDirectory()
-			// 			? await getDirectorySize(path)
-			// 			: getOrInsert(map, path, currStat?.size)
-			// 	} catch (e) {
-			// 		console.log(e)
-			// 	}
-			// 	size && updateStatusBarItem(size)
-			// }
-			// const type = vscode.window.createTextEditorDecorationType({
-			// 	after: {
-			// 		contentText: '123!!'
-			// 	}
-			// })
-			const fileName = e?.document.fileName
-			if (fileName?.toLocaleLowerCase().endsWith('package.json')) {
-				const text = e?.document.getText()
-				if (text) {
-					let reflects = await parse(text)
-					depListener(
-						key => {
-							const depInfo = reflects.find(
-								r =>
-									getPackageFullName(r.name, r.version) ===
-									key
-							)
-							if (depInfo) {
-								const size = cache.get(key)?.size
-								const gzip = cache.get(key)?.gzip
-								const updatedPackageInfo = {
-									...depInfo,
-									size,
-									gzip
-								}
-								map.set(key, updatedPackageInfo)
-								e && updateDecorations(e, updatedPackageInfo)
-							}
-						},
-						() => {
-							console.log('done')
-							depClear()
-						}
-					)
-					batchBuild(
-						reflects
-							.filter(r => {
-								const fullName = getPackageFullName(
-									r.name,
-									r.version
-								)
-								let currDepInfo = map.get(fullName)
-								if (!currDepInfo) {
-									return true
-								}
-								const isBuilded =
-									currDepInfo.gzip && currDepInfo.size
-								if (isBuilded) {
-									e && updateDecorations(e, currDepInfo)
-								}
-								return !isBuilded
-							})
-							.map(r => ({
-								packageName: r.name,
-								version: r.version
-							}))
-					)
+			if (e) {
+				let path = e.document?.uri.path
+				if (path) {
+					try {
+						const currStat = await stat(path)
+						currStat.isDirectory()
+							? hideStatusBarItem()
+							: updateStatusBarItem(currStat.size)
+					} catch (e) {
+						console.log(e)
+					}
+				}
+				if (
+					e.document.fileName
+						.toLocaleLowerCase()
+						.endsWith('package.json')
+				) {
+					handlePackage(e, e.document.getText())
 				}
 			}
 		})
 	)
 
 	subscriptions.push(
-		vscode.workspace.onDidRenameFiles(e => {
-			vscode.window.showInformationMessage(
-				`old: ${e.files[0].oldUri}, new: ${e.files[0].oldUri}`
-			)
+		workspace.onDidChangeTextDocument(async e => {
+			vscode.window.showInformationMessage('onDidChangeTextDocument')
+			if (e) {
+				if (
+					e.document.fileName
+						.toLocaleLowerCase()
+						.endsWith('package.json')
+				) {
+					vscode.window.activeTextEditor &&
+						(await handlePackage(
+							vscode.window.activeTextEditor,
+							e.document.getText()
+						))
+				}
+			}
 		})
 	)
-	subscriptions.push(
-		vscode.workspace.onDidChangeWorkspaceFolders(e => {
-			vscode.window.showInformationMessage('onDidChangeWorkspaceFolders')
-		})
-	)
-	// subscriptions.push(
-	// 	vscode.window.onDidChangeTextEditorSelection(updateStatusBarItem)
-	// )
 
-	// update status bar item once at start
-	updateStatusBarItem(0)
+	subscriptions.push(
+		vscode.workspace.onDidSaveTextDocument(e => {
+			window.activeTextEditor &&
+				handlePackage(window.activeTextEditor, e.getText())
+		})
+	)
 }
 
 function updateStatusBarItem(size: number): void {
 	// const n = getNumberOfSelectedLines(vscode.window.activeTextEditor)
-	if (size > 0) {
-		myStatusBarItem.text = `$(megaphone) ${fsFormat(size)}`
-		myStatusBarItem.show()
-	} else {
-		myStatusBarItem.hide()
-	}
+	myStatusBarItem.text = `$(megaphone) ${fsFormat(size)}`
+	myStatusBarItem.show()
 }
 
-let indent = 4
+function hideStatusBarItem(): void {
+	myStatusBarItem.hide()
+}
+
+// <lineNumber, TextEditorDecorationType>
+const decorationMap = new Map<
+	number,
+	{ type: TextEditorDecorationType; info: PackageInfo }
+>()
+const indent = 4
 function updateDecorations(editor: vscode.TextEditor, info: PackageInfo) {
 	const text = `${info.size && fsFormat(info.size)} ${
 		info.gzip ? `(gzip: ${fsFormat(info.gzip)})` : ''
@@ -159,8 +126,63 @@ function updateDecorations(editor: vscode.TextEditor, info: PackageInfo) {
 			color: '#22C55E'
 		}
 	})
-	let start = new Position(info.lineNumber, info.length)
-	let end = new Position(info.lineNumber, info.length + text.length)
-	let range = new Range(start, end)
+	decorationMap.set(info.lineNumber, { type, info })
+	const start = new Position(info.lineNumber, info.length)
+	const end = new Position(info.lineNumber, info.length + text.length)
+	const range = new Range(start, end)
 	editor.setDecorations(type, [range])
+}
+
+const handlePackage = async (editor: TextEditor, text: string) => {
+	if (!text) {
+		return
+	}
+	const reflects = await parse(text)
+	if (reflects?.length > 0) {
+		for (const value of decorationMap.values()) {
+			value?.type.dispose()
+		}
+	}
+	depListener(
+		key => {
+			const depInfo = reflects.find(
+				r => getPackageFullName(r.name, r.version) === key
+			)
+			if (depInfo) {
+				const size = cache.get(key)?.size
+				const gzip = cache.get(key)?.gzip
+				const updatedPackageInfo = {
+					...depInfo,
+					size,
+					gzip
+				}
+				map.set(key, updatedPackageInfo)
+				updateDecorations(editor, updatedPackageInfo)
+			}
+		},
+		() => {
+			depClear()
+		}
+	)
+	batchBuild(
+		reflects
+			// .filter(r => {
+			// 	const fullName = getPackageFullName(r.name, r.version)
+			// 	let currDepInfo = map.get(fullName)
+			// 	if (!currDepInfo) {
+			// 		return true
+			// 	} else {
+			// 		map.set(fullName, { ...currDepInfo, ...r })
+			// 	}
+			// 	const isBuilded = currDepInfo.gzip && currDepInfo.size
+			// 	if (isBuilded) {
+			// 		updateDecorations(editor, currDepInfo)
+			// 	}
+			// 	return !isBuilded
+			// })
+			.map(r => ({
+				packageName: r.name,
+				version: r.version
+			}))
+	)
 }
