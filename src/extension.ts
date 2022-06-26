@@ -1,17 +1,11 @@
 import { stat } from 'fs/promises'
-import {
-	commands,
-	ExtensionContext,
-	TextEditor,
-	window,
-	workspace
-} from 'vscode'
-import { batchBuild, getPackageFullName } from './build'
+import { commands, ExtensionContext, window, workspace } from 'vscode'
 import { Cache } from './cache'
-import { clearDecorations, updateDecorations } from './decoration'
-import { depClear, depListener } from './emitter'
-import { DepInfo, parse } from './parser'
+import { clearDecorations } from './decoration'
+import { packageDeHandler } from './handler'
+import { DepInfo } from './parser'
 import { SizeStatusBarItem } from './status-bar'
+import { isPackage } from './utils'
 
 export type PackageInfo = DepInfo & SizeInfo
 
@@ -54,31 +48,22 @@ export function activate({ subscriptions }: ExtensionContext) {
 						console.error(e)
 					}
 				}
-				if (
-					e.document.fileName
-						.toLocaleLowerCase()
-						.endsWith('package.json')
-				) {
-					handlePackage(e, e.document.getText())
+				if (isPackage(e.document.fileName)) {
+					packageDeHandler(e, e.document.getText())
 				}
 			}
 		})
 	)
 
 	subscriptions.push(
-		workspace.onDidChangeTextDocument(async e => {
-			window.showInformationMessage('onDidChangeTextDocument')
-			if (e) {
-				if (
-					e.document.fileName
-						.toLocaleLowerCase()
-						.endsWith('package.json')
-				) {
+		workspace.onDidChangeTextDocument(e => {
+			if (isPackage(e.document.fileName)) {
+				{
 					window.activeTextEditor &&
-						(await handlePackage(
+						packageDeHandler(
 							window.activeTextEditor,
 							e.document.getText()
-						))
+						)
 				}
 			}
 		})
@@ -87,43 +72,16 @@ export function activate({ subscriptions }: ExtensionContext) {
 	subscriptions.push(
 		workspace.onDidSaveTextDocument(e => {
 			window.activeTextEditor &&
-				handlePackage(window.activeTextEditor, e.getText())
+				packageDeHandler(window.activeTextEditor, e.getText())
 		})
 	)
-}
 
-const handlePackage = async (editor: TextEditor, text: string) => {
-	if (!text) {
-		return
+	const currentFileName = window.activeTextEditor?.document.fileName
+
+	if (currentFileName && isPackage(currentFileName)) {
+		packageDeHandler(
+			window.activeTextEditor,
+			window.activeTextEditor?.document.getText()
+		)
 	}
-	const reflects = await parse(text)
-	if (reflects?.length > 0) {
-		clearDecorations()
-	}
-	depListener(
-		key => {
-			const depInfo = reflects.find(
-				r => getPackageFullName(r.name, r.version) === key
-			)
-			if (depInfo) {
-				const size = cache.get(key)?.size
-				const gzip = cache.get(key)?.gzip
-				const updatedPackageInfo = {
-					...depInfo,
-					size,
-					gzip
-				}
-				updateDecorations(editor, updatedPackageInfo)
-			}
-		},
-		() => {
-			depClear()
-		}
-	)
-	batchBuild(
-		reflects.map(r => ({
-			packageName: r.name,
-			version: r.version
-		}))
-	)
 }

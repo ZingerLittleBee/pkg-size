@@ -1,31 +1,28 @@
-import mitt from './mitt'
+import { Emitters } from './emitters'
 
-let FINISH = Symbol('finish')
-let DONE = Symbol('done')
-
-const emitter = mitt()
+const emitter = Emitters.getInstance()
 
 export const depListener = (
 	finishEvent?: (key: string) => void,
 	doneEvent?: () => void
 ) => {
-	emitter.on(FINISH, key => finishEvent?.(key as string))
-	emitter.on(DONE, () => doneEvent?.())
+	emitter.on('finish', key => finishEvent?.(key as string))
+	emitter.on('done', () => doneEvent?.())
 }
 
 export const depFinish = (key: string) => {
-	emitter.emit(FINISH, key)
+	emitter.emit('finish', key)
 }
 
 export const depDone = () => {
-	emitter.emit(DONE)
+	emitter.emit('done')
 }
 
 export const depClear = () => {
-	emitter.off(FINISH)
-	emitter.off(DONE)
+	emitter.off('finish')
+	emitter.off('done')
 }
 
 export const clear = () => {
-	emitter.all.clear()
+	emitter.clear()
 }

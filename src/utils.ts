@@ -23,3 +23,20 @@ export const getOrInsert = <T>(
 	map.set(key, insertValue)
 	return insertValue
 }
+
+export const debounce = (
+	fn: (...args: any[]) => Promise<void>,
+	delay: number
+) => {
+	let timer: NodeJS.Timeout
+	return (...args: any[]) => {
+		if (timer) {
+			clearTimeout(timer)
+		}
+		timer = setTimeout(() => fn(...args), delay)
+	}
+}
+
+export const isPackage = (path?: string) => {
+	return path?.toLocaleLowerCase().endsWith('package.json')
+}
