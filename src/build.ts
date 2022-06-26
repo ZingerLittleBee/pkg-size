@@ -21,6 +21,9 @@ export const build = async (
 				...options
 			}
 		)
+		console.log(
+			`${packageName}@${version} build success, size: ${res.size}, gzip: ${res.gzip}`
+		)
 		cache.set(getPackageFullName(packageName, version), {
 			size: res.size,
 			gzip: res.gzip,
@@ -49,7 +52,9 @@ export const batchBuild = async (
 				depFinish(getPackageFullName(packageName, version))
 			}
 		} else {
-			build(packageName, version).then(() => {
+			build(packageName, version, {
+				limitConcurrency: true
+			}).then(() => {
 				depFinish(getPackageFullName(packageName, version))
 			})
 		}

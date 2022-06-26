@@ -23,4 +23,7 @@ export class Cache {
 	set(key: string, value: any) {
 		this.map.set(key, value)
 	}
+	clear() {
+		this.map.clear()
+	}
 }
