@@ -1,14 +1,25 @@
 import { TextEditor } from 'vscode'
 import { batchBuild, getPackageFullName } from './build'
 import { Cache } from './cache'
-import { clearDecorations, updateDecorations } from './decoration'
+import {
+	clearDecorations,
+	reRenderDecorations,
+	updateDecorations
+} from './decoration'
 import { depClear, depListener } from './emitter'
 import { parse } from './parser'
-import { debounce } from './utils'
+import { computedHash, debounce } from './utils'
 
 const cache = Cache.getInstance()
 
+let prePackageHash: string
+
 const packageHandler = async (editor: TextEditor, text: string) => {
+	if (prePackageHash === computedHash(text)) {
+		reRenderDecorations(editor)
+		console.log('package not change')
+		return
+	}
 	if (!text) {
 		return
 	}
@@ -33,7 +44,9 @@ const packageHandler = async (editor: TextEditor, text: string) => {
 			}
 		},
 		() => {
+			console.log('dep build done')
 			depClear()
+			prePackageHash = computedHash(text)
 		}
 	)
 	batchBuild(

@@ -1,3 +1,5 @@
+import { createHash } from 'crypto'
+
 export const fsFormat = (size: number) => {
 	const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
 	let i = 0
@@ -39,4 +41,10 @@ export const debounce = (
 
 export const isPackage = (path?: string) => {
 	return path?.toLocaleLowerCase().endsWith('package.json')
+}
+
+export const computedHash = (content: string) => {
+	const hash = createHash('md5')
+	hash.update(content, 'utf8')
+	return hash.digest('hex')
 }
