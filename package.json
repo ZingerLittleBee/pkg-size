@@ -1,6 +1,6 @@
 {
-    "name": "package-size",
-    "displayName": "package-size",
+    "name": "pkg-size",
+    "displayName": "pkg-size",
     "description": "",
     "version": "0.0.1",
     "engines": {
@@ -16,7 +16,7 @@
     "contributes": {
         "commands": [
             {
-                "command": "package-size.rebuild",
+                "command": "pkg-size.rebuild",
                 "title": "Rebuild Deps"
             }
         ]

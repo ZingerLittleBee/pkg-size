@@ -16,7 +16,7 @@ type SizeInfo = {
 
 const cache = Cache.getInstance()
 
-const rebuildCommandId = 'package-size.rebuild'
+const rebuildCommandId = 'pkg-size.rebuild'
 
 export function activate({ subscriptions }: ExtensionContext) {
 	subscriptions.push(
