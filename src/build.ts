@@ -51,16 +51,20 @@ export const batchBuild = async (
 			if (!infoInCache.isSkip) {
 				depFinish(getPackageFullName(packageName, version))
 			}
+			taskNumber--
+			if (taskNumber === 0) {
+				depDone()
+			}
 		} else {
 			build(packageName, version, {
 				limitConcurrency: true
 			}).then(() => {
 				depFinish(getPackageFullName(packageName, version))
+				taskNumber--
+				if (taskNumber === 0) {
+					depDone()
+				}
 			})
-		}
-		taskNumber--
-		if (taskNumber === 0) {
-			depDone()
 		}
 	})
 }
