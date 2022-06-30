@@ -85,3 +85,7 @@ export function activate({ subscriptions }: ExtensionContext) {
 		)
 	}
 }
+
+export function deactivate() {
+	// storage
+}
