@@ -14,6 +14,9 @@ const decorations = new WeakMap<TextEditorDecorationType, Range[]>()
 const indent = 8
 
 export const updateDecorations = (editor: TextEditor, info: PackageInfo) => {
+	if (decorationMap.get(info.lineNumber)) {
+		decorationMap.get(info.lineNumber)?.dispose()
+	}
 	const text = `${info.size ? fsFormat(info.size) : ''} ${
 		info.gzip ? `(gzip: ${fsFormat(info.gzip)})` : ''
 	}`

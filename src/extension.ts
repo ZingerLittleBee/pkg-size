@@ -14,7 +14,14 @@ type SizeInfo = {
 	gzip?: number
 }
 
-const cache = Cache.getInstance()
+let cache: Cache
+;(async () => {
+	try {
+		cache = await Cache.getInstance()
+	} catch (e) {
+		// Deal with the fact the chain failed
+	}
+})()
 
 const rebuildCommandId = 'pkg-size.rebuild'
 
@@ -88,4 +95,5 @@ export function activate({ subscriptions }: ExtensionContext) {
 
 export function deactivate() {
 	// storage
+	cache.toPersistence()
 }

@@ -1,19 +1,20 @@
-type BuildInfo = {
-	size?: number
-	gzip?: number
-	time?: number
-	isSkip?: boolean
-}
+import { BuildInfo, getConfig, overriedConfig } from './persistence'
+
 export class Cache {
 	// <packageName@version, buildInfo>
 	private map: Map<string, BuildInfo>
 	private static instance: Cache
-	constructor() {
-		this.map = new Map()
+	constructor(data: Record<string, BuildInfo> = {}) {
+		if (Object.keys(data).length === 0) {
+			this.map = new Map()
+		} else {
+			this.map = new Map(Object.entries(data))
+		}
 	}
-	static getInstance() {
+	static async getInstance() {
 		if (!Cache.instance) {
-			Cache.instance = new Cache()
+			const config = await getConfig()
+			Cache.instance = new Cache(config)
 		}
 		return Cache.instance
 	}
@@ -25,5 +26,15 @@ export class Cache {
 	}
 	clear() {
 		this.map.clear()
+	}
+	async toPersistence() {
+		if (this.map.size !== 0) {
+			try {
+				overriedConfig(JSON.stringify(Object.fromEntries(this.map)))
+			} catch (e) {
+				console.error('toPersistence failed')
+				console.error(e)
+			}
+		}
 	}
 }
