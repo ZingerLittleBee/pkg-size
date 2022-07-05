@@ -1,51 +1,37 @@
-import {
-	Position,
-	Range,
-	TextEditor,
-	TextEditorDecorationType,
-	window
-} from 'vscode'
+import { Position, Range, TextEditor, window } from 'vscode'
+import { INDENT, TEXT_COLOR } from './config'
+import { getDecoration } from './data-center'
 import { PackageInfo } from './extension'
 import { fsFormat } from './utils'
 
-// <lineNumber, TextEditorDecorationType>
-const decorationMap = new Map<number, TextEditorDecorationType>()
-const decorations = new WeakMap<TextEditorDecorationType, Range[]>()
-const indent = 8
-
 export const updateDecorations = (editor: TextEditor, info: PackageInfo) => {
-	if (decorationMap.get(info.lineNumber)) {
-		decorationMap.get(info.lineNumber)?.dispose()
-	}
+	getDecoration().dispose(editor.document.uri.path, info.lineNumber)
 	const text = `${info.size ? fsFormat(info.size) : ''} ${
 		info.gzip ? `(gzip: ${fsFormat(info.gzip)})` : ''
 	}`
 	const type = window.createTextEditorDecorationType({
 		after: {
-			contentText: `${Array(indent).fill(' ').join('')}${text}`,
-			color: '#22C55E'
+			contentText: text,
+			color: TEXT_COLOR,
+			margin: '0 0 0 ' + INDENT + 'px'
 		}
 	})
-	decorationMap.set(info.lineNumber, type)
 	const start = new Position(info.lineNumber, info.length)
 	const end = new Position(info.lineNumber, info.length + text.length)
 	const range = new Range(start, end)
-	decorations.set(type, [range])
 	editor.setDecorations(type, [range])
+	getDecoration().setType(editor.document.uri.path, info.lineNumber, type, [
+		range
+	])
 }
 
-export const reRenderDecorations = (editor: TextEditor) => {
-	for (const type of decorationMap.values()) {
-		let ranges = decorations.get(type)
-		if (ranges) {
-			editor.setDecorations(type, ranges)
-		}
-	}
-}
+export const reRenderDecorations = (editor: TextEditor) =>
+	getDecoration()
+		.getTypeAndRangeByPath(editor.document.uri.path)
+		.forEach(tr => {
+			if (tr.range) {
+				editor.setDecorations(tr.type, tr.range)
+			}
+		})
 
-export const clearDecorations = () => {
-	for (const value of decorationMap.values()) {
-		value?.dispose()
-	}
-	decorationMap.clear()
-}
+export const clearDecorations = () => getDecoration().clear()

@@ -1,8 +1,5 @@
 import { readFile, writeFile } from 'fs/promises'
-import { homedir } from 'os'
-
-const PKG_SIZE_CONFIG_NAME = '.pkg-size'
-const PKG_SIZE_CONFIG_PATH = `${homedir()}/${PKG_SIZE_CONFIG_NAME}`
+import { PKG_SIZE_CONFIG_PATH } from './config'
 
 export type BuildInfo = {
 	size?: number

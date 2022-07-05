@@ -1,6 +1,8 @@
 import { stat } from 'fs/promises'
 import { commands, ExtensionContext, window, workspace } from 'vscode'
-import { Cache } from './cache'
+import { REBUILD_COMMAND_ID } from './config'
+import { getBuildCache, getFileHash } from './data-center'
+import BuildCache from './data-center/buildCache'
 import { clearDecorations } from './decoration'
 import { packageDeHandler } from './handler'
 import { DepInfo } from './parser'
@@ -14,27 +16,30 @@ type SizeInfo = {
 	gzip?: number
 }
 
-let cache: Cache
+let cache: BuildCache
 ;(async () => {
 	try {
-		cache = await Cache.getInstance()
+		cache = await getBuildCache()
 	} catch (e) {
-		// Deal with the fact the chain failed
+		console.error(`getBuildCache error: ${e}`)
 	}
 })()
 
-const rebuildCommandId = 'pkg-size.rebuild'
+const sizeStatusBarItem = new SizeStatusBarItem()
 
 export function activate({ subscriptions }: ExtensionContext) {
 	subscriptions.push(
-		commands.registerCommand(rebuildCommandId, () => {
+		commands.registerCommand(REBUILD_COMMAND_ID, () => {
 			console.log('rebuild')
 			cache.clear()
 			clearDecorations()
+			getFileHash().clear()
+			packageDeHandler(
+				window.activeTextEditor,
+				window.activeTextEditor?.document.getText()
+			)
 		})
 	)
-
-	const sizeStatusBarItem = new SizeStatusBarItem()
 
 	// register some listener that make sure the status bar
 	// item always up-to-date
@@ -43,17 +48,7 @@ export function activate({ subscriptions }: ExtensionContext) {
 			if (e) {
 				let path = e.document?.uri.path
 				if (path) {
-					try {
-						const currStat = await stat(path)
-						currStat.isDirectory()
-							? sizeStatusBarItem.hideStatusBarItem()
-							: sizeStatusBarItem.updateStatusBarItem(
-									currStat.size,
-									rebuildCommandId
-							  )
-					} catch (e) {
-						console.error(e)
-					}
+					showStatusBar(path)
 				}
 				if (isPackage(e.document.fileName)) {
 					packageDeHandler(e, e.document.getText())
@@ -91,9 +86,27 @@ export function activate({ subscriptions }: ExtensionContext) {
 			window.activeTextEditor?.document.getText()
 		)
 	}
+	showStatusBar(window.activeTextEditor?.document.uri.path)
 }
 
 export function deactivate() {
 	// storage
 	cache.toPersistence()
+}
+
+const showStatusBar = async (path?: string) => {
+	if (!path) {
+		return
+	}
+	try {
+		const currStat = await stat(path)
+		currStat.isDirectory()
+			? sizeStatusBarItem.hideStatusBarItem()
+			: sizeStatusBarItem.updateStatusBarItem(
+					currStat.size,
+					REBUILD_COMMAND_ID
+			  )
+	} catch (e) {
+		console.error(e)
+	}
 }

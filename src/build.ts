@@ -1,6 +1,7 @@
 import { getPackageStats } from 'package-build-stats'
 import { GetPackageStatsOptions } from 'package-build-stats/build/common.types'
-import { Cache } from './cache'
+import { getBuildCache } from './data-center'
+import BuildCache from './data-center/buildCache'
 import { depDone, depFinish } from './emitter'
 
 export const getPackageFullName = (packageName: string, version?: string) => {
@@ -9,7 +10,7 @@ export const getPackageFullName = (packageName: string, version?: string) => {
 
 export const build = async (
 	packageName: string,
-	cache?: Cache,
+	cache?: BuildCache,
 	version?: string,
 	options?: GetPackageStatsOptions
 ) => {
@@ -29,8 +30,7 @@ export const build = async (
 			time: new Date().getTime()
 		})
 	} catch (e) {
-		console.error(`${packageName}@${version} build failed, will skip`)
-		console.error(e)
+		console.error(`${packageName}@${version} build failed: ${e}, will skip`)
 		cache?.set(getPackageFullName(packageName, version), {
 			isSkip: true,
 			time: new Date().getTime()
@@ -43,12 +43,11 @@ export const batchBuild = async (
 ) => {
 	let taskNumber = packages.length
 
-	let cache: Cache
+	let cache: BuildCache
 	try {
-		cache = await Cache.getInstance()
+		cache = await getBuildCache()
 	} catch (e) {
-		console.error('get cache failed')
-		console.error(e)
+		console.error(`get cache failed: ${e}`)
 	}
 
 	packages.forEach(p => {

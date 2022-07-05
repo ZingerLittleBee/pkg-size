@@ -1,31 +1,43 @@
 import { TextEditor } from 'vscode'
 import { batchBuild, getPackageFullName } from './build'
-import { Cache } from './cache'
+import { getBuildCache, getFileHash, getParsedDep } from './data-center'
+import BuildCache from './data-center/buildCache'
 import { reRenderDecorations, updateDecorations } from './decoration'
 import { depClear, depListener } from './emitter'
 import { parse } from './parser'
 import { computedHash, debounce } from './utils'
 
-let prePackageHash: string
+const isFileChanged = (path: string, content: string) => {
+	// file not changed, just need to re-render decorations
+	const currentHash = computedHash(content)
+	if (getFileHash().get(path) === currentHash) {
+		return false
+	}
+	// update file hash
+	getFileHash().set(path, currentHash)
+	return true
+}
 
 const packageHandler = async (editor: TextEditor, text: string) => {
-	// file not changed, just need to re-render decorations
-	if (prePackageHash === computedHash(text)) {
-		reRenderDecorations(editor)
-		console.log('package not change')
-		return
-	}
 	if (!text) {
 		return
 	}
+	if (!isFileChanged(editor.document.uri.path, text)) {
+		reRenderDecorations(editor)
+		console.log('package not change')
+	}
 	const reflects = await parse(text)
 
-	let cache: Cache
+	// store dep@version from parsed
+	reflects.forEach(r =>
+		getParsedDep().add(getPackageFullName(r.name, r.version))
+	)
+
+	let cache: BuildCache
 	try {
-		cache = await Cache.getInstance()
+		cache = await getBuildCache()
 	} catch (e) {
-		console.error('get cache failed')
-		console.error(e)
+		console.error(`get cache failed: ${e}`)
 	}
 	depListener(
 		key => {
@@ -46,7 +58,7 @@ const packageHandler = async (editor: TextEditor, text: string) => {
 		() => {
 			console.log('dep build done')
 			depClear()
-			prePackageHash = computedHash(text)
+			getFileHash().set(editor.document.uri.path, computedHash(text))
 		}
 	)
 	batchBuild(
