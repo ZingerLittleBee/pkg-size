@@ -1,7 +1,7 @@
 import { stat } from 'fs/promises'
 import { commands, ExtensionContext, window, workspace } from 'vscode'
 import { REBUILD_COMMAND_ID } from './config'
-import { getBuildCache, getFileHash } from './data-center'
+import { getBuildCache, getDecoration, getFileHash } from './data-center'
 import BuildCache from './data-center/buildCache'
 import { clearDecorations } from './decoration'
 import { packageDeHandler } from './handler'
@@ -59,7 +59,16 @@ export function activate({ subscriptions }: ExtensionContext) {
 
 	subscriptions.push(
 		workspace.onDidChangeTextDocument(e => {
-			if (isPackage(e.document.fileName)) {
+			if (e.document.isDirty) {
+				e.contentChanges.forEach(c => {
+					getDecoration().disposeByRange(e.document.uri.path, c.range)
+				})
+			}
+			if (
+				isPackage(e.document.fileName) &&
+				e.contentChanges.length > 0 &&
+				!e.document.isDirty
+			) {
 				{
 					window.activeTextEditor &&
 						packageDeHandler(

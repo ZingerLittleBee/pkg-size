@@ -30,6 +30,10 @@ export default class Decoration {
 		type: TextEditorDecorationType,
 		range: Range[]
 	) {
+		if (!this.decorationMap.get(path)) {
+			const newMap = new Map<number, TextEditorDecorationType>()
+			this.decorationMap.set(path, newMap)
+		}
 		this.decorationMap.get(path)?.set(line, type)
 		this.decorationTypeMap.set(type, range)
 		this.decorationTypeSet.add(type)
@@ -57,8 +61,25 @@ export default class Decoration {
 		}
 		return types
 	}
-	dispose(path: string, line: number) {
-		this.decorationMap.get(path)?.get(line)?.dispose()
+	dispose(path: string, line: number | number[]) {
+		if (!path || line < 0) {
+			return
+		}
+		if (!Array.isArray(line)) {
+			line = [line]
+		}
+		line.forEach(l => this.decorationMap.get(path)?.get(l)?.dispose())
+	}
+	disposeByRange(path: string, range: Range) {
+		const { start, end } = range
+		const startLine = start.line
+		const endLine = end.line
+		startLine === endLine
+			? this.dispose(path, startLine)
+			: this.dispose(
+					path,
+					new Array(endLine - startLine).map((_, i) => startLine + i)
+			  )
 	}
 	clear() {
 		for (const type of this.decorationTypeSet) {
