@@ -1,3 +1,5 @@
+Language : [🇺🇸 English](./README.md) | 🇨🇳 简体中文
+
 <h1 align="center">pkg-size</h1>
 
 ## 概括
