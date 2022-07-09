@@ -7,6 +7,7 @@
         "package",
         "size"
     ],
+    "publisher": "zingerbee",
     "author": "ZingerLittleBee",
     "license": "MIT",
     "repository": {
