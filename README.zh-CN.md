@@ -1,72 +1,48 @@
 <h1 align="center">pkg-size</h1>
 
-## Overview
+## 概括
 
-`pkg-size` is a vscode extension that calculate deps size in package.json 📦
+`pkg-size` 是一个统计 `package.json` 中依赖项 size 的 VSCode 插件 📦
 
-## Features
+## 特点
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- 打包完之后 size
+- gzip 压缩后 size
+- 底部状态栏显示当前文件的大小
+- 构建结果缓存
 
-For example if there is an image subfolder under your extension project workspace:
+## 图示
 
+`package.json`
 ![snapshot](snapshot/overview.png)
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+状态栏
 
-## Requirements
+![status](snapshot/status.png)
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## 使用说明
 
-## Extension Settings
+### 一些依赖不会被构建
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+带有特定 loader 的依赖不会被构建
 
-For example:
+### 清除**当前** project 缓存
 
-This extension contributes the following settings:
+***点击状态栏图标***即可清除构建缓存
+> 只会清除当前 project 所使用到的依赖缓存(如果有的话)
 
-* `myExtension.enable`: enable/disable this extension
-* `myExtension.thing`: set to `blah` to do something
+### 清除**所有**缓存
 
-## Known Issues
+- `Linux` and `MacOS`: `rm -f ～/.pkg.size`
+- `Windows`: 删除 `C:\Users\YouName\.pkg.size`
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
+## 发行说明
 
 ### 1.0.0
 
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
------------------------------------------------------------------------------------------------------------
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-**Note:** You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+CMD+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux) or `Cmd+Space` (macOS) to see a list of Markdown snippets
-
-### For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+- feat: 🎸 clear cache
+- feat: 🎸 build info persistence
+- feat: 🎸 file hash check
+- feat: 🎸 parse deps
 
 **Enjoy!**
