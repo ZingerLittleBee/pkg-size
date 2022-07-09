@@ -1,6 +1,8 @@
 Language : 🇺🇸 English | [🇨🇳 简体中文](./README.zh-CN.md)
 
-<h1 align="center">pkg-size</h1>
+<h1 align="center">
+pkg-size
+</h1>
 
 ## Overview
 
@@ -46,5 +48,10 @@ deps with specific loader will not builded
 - feat: 🎸 build info persistence
 - feat: 🎸 file hash check
 - feat: 🎸 parse deps
+
+## Thanks
+
+<a href="https://www.flaticon.com/free-icons/package" title="package icons">Package icons created by IconBaandar - Flaticon</a>
+
 
 **Enjoy!**

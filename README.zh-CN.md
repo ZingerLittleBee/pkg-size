@@ -47,4 +47,9 @@ Language : [🇺🇸 English](./README.md) | 🇨🇳 简体中文
 - feat: 🎸 file hash check
 - feat: 🎸 parse deps
 
+
+## 感谢
+
+<a href="https://www.flaticon.com/free-icons/package" title="package icons">Package icons created by IconBaandar - Flaticon</a>
+
 **Enjoy!**
