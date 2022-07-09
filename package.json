@@ -2,7 +2,21 @@
     "name": "pkg-size",
     "displayName": "pkg-size",
     "description": "",
-    "version": "0.0.1",
+    "version": "1.0.0",
+    "keywords": [
+        "package",
+        "size"
+    ],
+    "author": "ZingerLittleBee",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ZingerLittleBee/pkg-size.git"
+    },
+    "bugs": {
+        "url": "https://github.com/ZingerLittleBee/pkg-size/issues"
+    },
+    "homepage": "https://github.com/ZingerLittleBee/pkg-size",
     "engines": {
         "vscode": "^1.68.0"
     },
