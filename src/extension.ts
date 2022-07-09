@@ -59,17 +59,11 @@ export function activate({ subscriptions }: ExtensionContext) {
 
 	subscriptions.push(
 		workspace.onDidChangeTextDocument(e => {
-			if (e.document.isDirty) {
+			if (isPackage(e.document.fileName)) {
 				e.contentChanges.forEach(c => {
 					getDecoration().disposeByRange(e.document.uri.path, c.range)
 				})
-			}
-			if (
-				isPackage(e.document.fileName) &&
-				e.contentChanges.length > 0 &&
-				!e.document.isDirty
-			) {
-				{
+				if (e.contentChanges.length > 0 && !e.document.isDirty) {
 					window.activeTextEditor &&
 						packageDeHandler(
 							window.activeTextEditor,
