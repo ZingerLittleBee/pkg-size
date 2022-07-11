@@ -4,10 +4,11 @@ Language : 🇺🇸 English | [🇨🇳 简体中文](./README.zh-CN.md)
 
 <div align="center">
 
-![Visual Studio Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/pkg-size?style=flat-square)
-![Visual Studio Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/pkg-size?style=flat-square)
-![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/pkg-size?style=flat-square)
-![Visual Studio Marketplace Release Date](https://img.shields.io/visual-studio-marketplace/release-date/pkg-size?style=flat-square)
+![Visual Studio Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/zingerbee.pkg-size?style=flat-square)
+![Visual Studio Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/zingerbee.pkg-size?style=flat-square)
+![Visual Studio Marketplace Release Date](https://img.shields.io/visual-studio-marketplace/release-date/zingerbee.pkg-size?style=flat-square)
+![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/zingerbee.pkg-size?style=flat-square)
+
 
 </div>
 
