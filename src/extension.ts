@@ -1,6 +1,6 @@
 import { stat } from 'fs/promises'
 import { commands, ExtensionContext, window, workspace } from 'vscode'
-import { REBUILD_COMMAND_ID } from './config'
+import { REBUILD_COMMAND_ID } from './const'
 import { getBuildCache, getDecoration, getFileHash } from './data-center'
 import BuildCache from './data-center/buildCache'
 import { clearDecorations } from './decoration'

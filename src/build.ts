@@ -1,6 +1,5 @@
-import { getPackageStats } from 'package-build-stats'
-import { GetPackageStatsOptions } from 'package-build-stats/build/common.types'
-import { getBuildCache } from './data-center'
+import axios from 'axios'
+import { getBuildCache, getConfig } from './data-center'
 import BuildCache from './data-center/buildCache'
 import { depDone, depFinish } from './emitter'
 
@@ -11,22 +10,30 @@ export const getPackageFullName = (packageName: string, version?: string) => {
 export const build = async (
 	packageName: string,
 	cache?: BuildCache,
-	version?: string,
-	options?: GetPackageStatsOptions
+	version?: string
 ) => {
 	try {
-		const res = await getPackageStats(
-			getPackageFullName(packageName, version),
+		const { data } = await axios.get(
+			`${(await getConfig()).getUrl()}?package=${getPackageFullName(
+				packageName,
+				version
+			)}&record=true`,
 			{
-				...options
+				timeout: 2000
 			}
 		)
+		const { size, gzip } = data
+		if (!size || !gzip) {
+			throw new Error(
+				`request ${getPackageFullName(packageName, version)} error`
+			)
+		}
 		console.log(
-			`${packageName}@${version} build success, size: ${res.size}, gzip: ${res.gzip}`
+			`${packageName}@${version} build success, size: ${size}, gzip: ${gzip}`
 		)
 		cache?.set(getPackageFullName(packageName, version), {
-			size: res.size,
-			gzip: res.gzip,
+			size,
+			gzip,
 			time: new Date().getTime()
 		})
 	} catch (e) {
@@ -48,7 +55,10 @@ export const batchBuild = async (
 		cache = await getBuildCache()
 	} catch (e) {
 		console.error(`get cache failed: ${e}`)
+		return
 	}
+
+	const waitBuildQueue: { packageName: string; version: string }[] = []
 
 	packages.forEach(p => {
 		const packageName = p.packageName
@@ -63,15 +73,19 @@ export const batchBuild = async (
 				depDone()
 			}
 		} else {
-			build(packageName, cache, version, {
-				limitConcurrency: true
-			}).then(() => {
-				depFinish(getPackageFullName(packageName, version))
-				taskNumber--
-				if (taskNumber === 0) {
-					depDone()
-				}
-			})
+			waitBuildQueue.push({ packageName, version })
 		}
 	})
+	// replace with concurrent
+	while (waitBuildQueue.length > 0) {
+		const item = waitBuildQueue.shift()
+		if (item) {
+			await build(item.packageName, cache, item.version)
+			depFinish(getPackageFullName(item.packageName, item.version))
+			taskNumber--
+			if (taskNumber === 0) {
+				depDone()
+			}
+		}
+	}
 }

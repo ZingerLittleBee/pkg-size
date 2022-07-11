@@ -1,5 +1,5 @@
 import { Position, Range, TextEditor, window } from 'vscode'
-import { INDENT, TEXT_COLOR } from './config'
+import { INDENT, TEXT_COLOR } from './const'
 import { getDecoration } from './data-center'
 import { PackageInfo } from './extension'
 import { fsFormat } from './utils'

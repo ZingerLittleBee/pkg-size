@@ -1,5 +1,5 @@
 import { getParsedDep } from '.'
-import { BuildInfo, getConfig, overriedConfig } from '../persistence'
+import Config, { BuildInfo } from './config'
 
 export default class BuildCache {
 	// current project <packageName@version, buildInfo>
@@ -15,7 +15,7 @@ export default class BuildCache {
 	}
 	static async getInstance() {
 		if (!BuildCache.instance) {
-			const config = await getConfig()
+			const config = (await Config.getInstance()).getDeps()
 			BuildCache.instance = new BuildCache(config)
 		}
 		return BuildCache.instance
@@ -38,12 +38,12 @@ export default class BuildCache {
 	async toPersistence() {
 		if (this.map.size !== 0) {
 			try {
-				overriedConfig(
-					JSON.stringify({
+				;(await Config.getInstance()).overriedConfig({
+					deps: {
 						...Object.fromEntries(this.persistenceMap),
 						...Object.fromEntries(this.map)
-					})
-				)
+					}
+				})
 			} catch (e) {
 				console.error('toPersistence failed')
 				console.error(e)
