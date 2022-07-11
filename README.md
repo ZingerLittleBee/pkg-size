@@ -1,18 +1,25 @@
 Language : 🇺🇸 English | [🇨🇳 简体中文](./README.zh-CN.md)
 
-<h1 align="center">
-pkg-size
-</h1>
+<h1 align="center">PKG Size</h1>
+
+<div align="center">
+
+![Visual Studio Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/pkg-size?style=flat-square)
+![Visual Studio Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/pkg-size?style=flat-square)
+![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/pkg-size?style=flat-square)
+![Visual Studio Marketplace Release Date](https://img.shields.io/visual-studio-marketplace/release-date/pkg-size?style=flat-square)
+
+</div>
 
 ## Overview
 
-`pkg-size` is a VSCode plugin that statistical`package.json` dependencies size 📦
+`PKG Size` is a VSCode plugin that statistics `package.json` dependencies size 📦
 
 ## Features
 
 - Size after packing
 - Size after gzip compression
-- The bottom status bar shows the size of the current file
+- Show size of current file in bottom status bar
 - Build result cache
 
 ## Snapshot
@@ -24,15 +31,21 @@ Status bar
 
 ![status](snapshot/status.png)
 
-## Instructions for use
-
-### Some deps can't build
-
-deps with specific loader will not builded
+## How to use
 
 ### Clear the **current** project cache
 
 ***Click the status bar icon*** to clear the build cache
+
+or
+
+```bash
+# Open Command Palette (Command/Ctrl + Shift + P)
+Rebuild Deps
+```
+
+
+
 > will only clear the dependency cache used by the current project (if any)
 
 ### Clear **all** cache
@@ -40,18 +53,48 @@ deps with specific loader will not builded
 - `Linux` and `MacOS`: `rm -f ～/.pkg.size`
 - `Windows`: delete `C:\Users\YouName\.pkg.size`
 
+## Question asked frequently
+
+### Some deps can't build
+
+deps with specific loader will not builded
+
+### Can I build backend myself
+
+Yes
+
+1. Deployment backend see [bundlephobia](https://github.com/pastelsky/bundlephobia)
+
+2. Modify configuration file `${home}/.pkg-size` 的 `baseUrl`
+
+```json
+{
+    "configs":{
+        "baseUrl": "https://youdomain"
+    }
+}
+```
+
+### Can I implement the backend myself
+
+Yes
+
+```bash
+GET /api/size/package=port-seletor@0.1.5
+
+# return
+data: {
+    size: string
+    gzip: string
+}
+```
+
 ## Release Notes
 
-### 1.0.0
-
-- feat: 🎸 clear cache
-- feat: 🎸 build info persistence
-- feat: 🎸 file hash check
-- feat: 🎸 parse deps
+SEE [CHANGELOG](CHANGELOG.md)
 
 ## Thanks
 
 <a href="https://www.flaticon.com/free-icons/package" title="package icons">Package icons created by IconBaandar - Flaticon</a>
 
-
-**Enjoy!**
+build info from [bundlephobia](https://bundlephobia.com/)

@@ -1,7 +1,7 @@
 {
     "name": "pkg-size",
-    "displayName": "pkg-size",
-    "description": "",
+    "displayName": "PKG Size",
+    "description": "Statistics package.json dependencies size 📦",
     "version": "1.0.0",
     "keywords": [
         "package",
