@@ -94,6 +94,13 @@ data: {
 
 SEE [CHANGELOG](CHANGELOG.md)
 
+## Roadmap
+
+The following are the features I want to achieve or are under development:
+
+- [ ] Sum of deps size
+- [ ] Command to control status bar visibility
+
 ## Thanks
 
 <a href="https://www.flaticon.com/free-icons/package" title="package icons">Package icons created by IconBaandar - Flaticon</a>
